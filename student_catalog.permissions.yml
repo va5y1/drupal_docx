@@ -1,0 +1,13 @@
+administer student:
+  title: 'Administer student settings'
+  restrict access: true
+access student overview:
+  title: 'Access student overview page'
+delete student:
+  title: 'Delete student'
+create student:
+  title: 'Create student'
+view student:
+  title: 'View student'
+edit student:
+  title: 'Edit student'

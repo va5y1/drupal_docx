@@ -1,0 +1,5 @@
+entity.student.collection:
+  title: Students
+  description: 'List of students'
+  route_name: entity.student.collection
+  parent: system.admin_structure
