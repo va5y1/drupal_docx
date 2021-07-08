@@ -5,3 +5,14 @@ entity.student.settings:
     _title: 'Student'
   requirements:
     _permission: 'administer student'
+student_catalog.document_page:
+  path: '/student/{student}/docx'
+  defaults:
+    _title: 'Docx Document'
+    _controller: 'Drupal\student_catalog\Controller\WordGenerateController::wordGeneration'
+  options:
+    parameters:
+      student:
+        type: entity:student
+  requirements:
+    _permission: 'generate word'

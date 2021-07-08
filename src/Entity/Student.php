@@ -80,7 +80,7 @@ class Student extends ContentEntityBase implements StudentInterface {
       ->setLabel(t('Changed'))
       ->setDescription(t('The time that the student was last edited.'));
 
-    $fields['first_name'] = BaseFieldDefinition::create('string')
+    $fields['field_first_name'] = BaseFieldDefinition::create('string')
       ->setLabel(t('First Name'))
       ->setDescription(t('The first name of the student.'))
       ->setDisplayOptions('view', [
@@ -96,7 +96,7 @@ class Student extends ContentEntityBase implements StudentInterface {
       ->setDisplayConfigurable('view', TRUE)
       ->setRequired(TRUE);
 
-    $fields['last_name'] = BaseFieldDefinition::create('string')
+    $fields['field_last_name'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Last Name'))
       ->setDescription(t('The last name of the student.'))
       ->setDisplayOptions('view', [
@@ -112,7 +112,7 @@ class Student extends ContentEntityBase implements StudentInterface {
       ->setDisplayConfigurable('view', TRUE)
       ->setRequired(TRUE);
 
-    $fields['photo'] = BaseFieldDefinition::create('image')
+    $fields['field_photo'] = BaseFieldDefinition::create('image')
       ->setLabel(t('Photo'))
       ->setDescription(t("The student photo."))
       ->setDisplayOptions('view', [
@@ -127,7 +127,7 @@ class Student extends ContentEntityBase implements StudentInterface {
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
-    $fields['bio'] = BaseFieldDefinition::create('text_long')
+    $fields['field_bio'] = BaseFieldDefinition::create('text_long')
       ->setLabel(t('Bio'))
       ->setDescription(t('The student biography.'))
       ->setDisplayOptions('view', [

@@ -11,3 +11,6 @@ view student:
   title: 'View student'
 edit student:
   title: 'Edit student'
+generate word:
+  title: 'Generate word'
+  description: 'Generate word document from a student entity.'

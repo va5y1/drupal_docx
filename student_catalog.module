@@ -6,6 +6,20 @@
  */
 
 use Drupal\Core\Render\Element;
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function student_catalog_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.student_catalog':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Provides a student entity with additional features.') . '</p>';
+      return $output;
+  }
+}
 
 /**
  * Implements hook_theme().
@@ -34,3 +48,4 @@ function template_preprocess_student(array &$variables) {
     $variables['content'][$key] = $variables['elements'][$key];
   }
 }
+
