@@ -3,11 +3,11 @@
 namespace Drupal\student_catalog\Controller;
 
 use Drupal\Core\Render\Markup;
+use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Shared\Html;
 use PhpOffice\PhpWord\SimpleType\TextAlignment;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Datetime\DateFormatterInterface;
-use Drupal\Core\Render\RendererInterface;
 use Drupal\student_catalog\StudentInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,13 +18,6 @@ use Symfony\Component\HttpFoundation\Response;
 class WordGenerateController extends ControllerBase {
 
   /**
-   * The renderer.
-   *
-   * @var \Drupal\Core\Render\RendererInterface
-   */
-  protected $renderer;
-
-  /**
    * The date formatter service.
    *
    * @var \Drupal\Core\Datetime\DateFormatterInterface
@@ -32,15 +25,22 @@ class WordGenerateController extends ControllerBase {
   protected $dateFormatter;
 
   /**
+   * The PhpWord writer.
+   *
+   * @var \PhpOffice\PhpWord\PhpWord
+   */
+  protected $wordWriter;
+
+  /**
    * The controller constructor.
    *
-   * @param \Drupal\Core\Render\RendererInterface $renderer
-   *   The renderer.
+   * @param \PhpOffice\PhpWord\PhpWord $phpword
+   *   The PhpWord writer.
    * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
    *   The date formatter service.
    */
-  public function __construct(RendererInterface $renderer, DateFormatterInterface $date_formatter) {
-    $this->renderer = $renderer;
+  public function __construct(PhpWord $phpword, DateFormatterInterface $date_formatter) {
+    $this->wordWriter = $phpword;
     $this->dateFormatter = $date_formatter;
   }
 
@@ -49,97 +49,105 @@ class WordGenerateController extends ControllerBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('renderer'),
+      $container->get('student_catalog.word_writer'),
       $container->get('date.formatter')
     );
   }
 
   /**
-   * Builds the response.
+   * Builds the word document from a student entity.
    *
    * @param \Drupal\student_catalog\StudentInterface $entity
+   *   The student entity.
    *
-   * @return mixed
-   *
-   * @throws \PhpOffice\PhpWord\Exception\Exception
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   The Response object.
    */
   public function wordGeneration(StudentInterface $entity) {
-    // Creating the new document...
+    $response = new Response();
+    // Preparing the document data.
     $first_name = $entity->get('field_first_name')->value;
     $last_name = $entity->get('field_last_name')->value;
     $current_date = $this->dateFormatter->format(time(), 'custom', 'm-d-Y H-i-s');
     $filename = "{$first_name} {$last_name}({$current_date}).docx";
     $title = $first_name . ' ' . $last_name;
-    $bio = $entity->get('field_bio');
-    $biorobot = '';
 
-    $image_uri = '';
-    $image = $entity->get('field_photo');
-
-
-    /* Note: any element you append to a document must reside inside of a Section. */
-
-    // Memory cleanup.
-    //    $phpWord->disconnectWorksheets();
-    //    unset($spreadsheet);
-    $response = new Response();
-    // $response->headers->set('Pragma', 'no-cache');
-    //    $response->headers->set('Expires', '0');
-    //    $response->headers->set('Content-Type', 'application/octet-stream');
-    //    $response->headers->set('Content-Disposition', "attachment; filename=\"{$first_name} {$last_name} - {$current_date}.docx\"");
-
-    /** @var \PhpOffice\PhpWord\PhpWord $writer */
-    $writer = \Drupal::service('student_catalog.word_writer');
+    $writer = $this->wordWriter;
     $writer->addTitleStyle(1,
       [
         'size' => 14,
         'bold' => TRUE,
       ],
       ['alignment' => TextAlignment::CENTER]);
-    // $section2 = $writer->addSection();
-    //    $section2->addTitle($title);
-    //    $writer->addTitle($section2);
-    $settings = $writer->getSettings();
+
+    $biography = $this->getBiography($entity);
+    $image_params = $this->prepareImage($entity);
 
     /** @var \PhpOffice\PhpWord\Element\Section $section */
     $section = $writer->addSection();
-    $section_style = $section->getStyle();
-
-    $tableStyle = ['borderSize' => 1, 'borderColor' => '999999', 'afterSpacing' => 0, 'Spacing' => 0, 'cellMargin' => 0];
-    $styleCell = ['borderTopSize' => 1 , 'borderTopColor' => 'black', 'borderLeftSize' => 1, 'borderLeftColor' => 'black', 'borderRightSize' => 1, 'borderRightColor' => 'black', 'borderBottomSize' => 1, 'borderBottomColor' => 'black'];
-    $fontStyle = ['italic' => TRUE, 'size' => 11, 'name' => 'Times New Roman', 'afterSpacing' => 0, 'Spacing' => 0, 'cellMargin' => 0];
-    // $section_style->setAuto();
-    // $section->setStyle($section_style);
-    // Simple text.
     $section->addTitle($title);
-    $section->addTextBreak();
-    $table = $section->addTable($fontStyle);
-    $table->addRow();
-    if (!$bio->isEmpty()) {
-      $biorobot .= '<p>' . t('Bio:') . '</p>';
-      $biorobot .= Markup::create($bio->value)->__toString();
-      $cell = $table->addCell(4500);
-      Html::addHtml($cell, $biorobot);
-    }
+    if ($biography || $image_params) {
+      $style_cell = ['borderColor' => 'white'];
+      $section->addTextBreak();
+      $table = $section->addTable();
+      $table->addRow();
 
-    if (!$image->isEmpty()) {
-      $image_uri = $image->entity->getFileUri();
-      $table->addCell(4500)->addImage(
-        $image_uri,
-        [
-          'width'         => 250,
-          'height'        => 250,
-          'marginTop'     => -1,
-          'marginLeft'    => -1,
-          'wrappingStyle' => 'behind',
-        ]
-      );
+      if ($biography) {
+        $cell = $table->addCell(4500, $style_cell);
+        Html::addHtml($cell, $biography);
+      }
+      if ($image_params) {
+        $table->addCell(4500, $style_cell)
+          ->addImage($image_params['uri'], $image_params['style']);
+      }
     }
-
 
     $writer->save($filename, 'Word2007', TRUE);
     return $response;
 
+  }
+
+  /**
+   * Prepares value from the biography field.
+   *
+   * @param \Drupal\student_catalog\StudentInterface $entity
+   *   The student entity.
+   *
+   * @return string|null
+   *   The biography field value. NULL if field is empty.
+   */
+  protected function getBiography(StudentInterface $entity) {
+    $bio_field = $entity->get('field_bio');
+    if ($bio_field->isEmpty()) {
+      return NULL;
+    }
+    $biography = '<p>' . $this->t('Bio:') . '</p>';
+    $biography .= Markup::create($bio_field->value)->__toString();
+    return $biography;
+  }
+
+  /**
+   * Prepares value from the photo field.
+   *
+   * @param \Drupal\student_catalog\StudentInterface $entity
+   *   The student entity.
+   *
+   * @return array|null
+   *   Prepared values from field_photo. NULL if field is empty.
+   */
+  protected function prepareImage(StudentInterface $entity) {
+    $image_field = $entity->get('field_photo');
+    if ($image_field->isEmpty()) {
+      return NULL;
+    }
+    $image_styles = [
+      'width'         => 250,
+      'height'        => 250,
+    ];
+    return [
+      'uri' => $image_field->entity->getFileUri(),
+      'style' => $image_styles,
+    ];
   }
 
 }
