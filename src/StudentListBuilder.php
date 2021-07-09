@@ -117,7 +117,7 @@ class StudentListBuilder extends EntityListBuilder {
       $image_uri = $image->entity->getFileUri();
       $image_array = [
         '#theme' => 'image_style',
-        '#style_name' => 'medium',
+        '#style_name' => 'thumbnail',
         '#uri' => $image_uri,
       ];
       $row['photo'] = $this->renderer->render($image_array);
@@ -129,7 +129,7 @@ class StudentListBuilder extends EntityListBuilder {
     $row['bio'] = Markup::create($bio);
     $row['created'] = $this->dateFormatter->format($entity->getCreatedTime());
     $row['changed'] = $this->dateFormatter->format($entity->getChangedTime());
-    $url = Url::fromRoute('student_catalog.document_page', ['student' => $entity->id()]);
+    $url = Url::fromRoute('student_catalog.document_page', ['entity' => $entity->id()], ['attributes' => ['target' => '_blank']]);
     $link = Link::fromTextAndUrl($this->t('DOCX Version'), $url);
     $row['docx'] = $link;
 

@@ -1,0 +1,3 @@
+services:
+  student_catalog.word_writer:
+    class: 'PhpOffice\PhpWord\PhpWord'
