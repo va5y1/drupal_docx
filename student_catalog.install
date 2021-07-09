@@ -1,9 +1,9 @@
 <?php
 
 /**
-* @file
-* Provides a student entity type.
-*/
+ * @file
+ * Provides a student entity type.
+ */
 
 /**
  * Implements hook_requirements().
@@ -24,7 +24,7 @@ function student_catalog_requirements($phase) {
       'title' => 'Student Catalog',
       'value' => t("Student Catalog requires the PhpWord library"),
       'description' => t('Make sure that the PhpWord lib is installed. You can download it from <a href=":link" target="_blank">GitHub</a>.', [':link' => 'https://github.com/PHPOffice/PHPWord']),
-      'severity' => REQUIREMENT_WARNING,
+      'severity' => REQUIREMENT_ERROR,
     ],
   ];
 }
